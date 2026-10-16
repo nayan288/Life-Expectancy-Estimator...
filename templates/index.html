@@ -1,0 +1,1506 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Life Expectancy Estimator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% raw %}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&family=Syne:wght@700;800&display=swap');
+
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        :root {
+            --ink: #120d33;
+            --ink-2: #1c1550;
+            --glass: rgba(255, 255, 255, .06);
+            --glass-edge: rgba(255, 255, 255, .14);
+            --text: #ece9ff;
+            --muted: #a9a3d6;
+            --flame: #ff5a5f;
+            --amber: #ffb347;
+            --ice: #4de1ff;
+            --violet: #9b6bff;
+            --life: linear-gradient(100deg, var(--ice), var(--violet) 45%, var(--flame) 80%, var(--amber));
+            --font-display: 'Syne', system-ui, sans-serif;
+            --font-body: 'Outfit', system-ui, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--text);
+            min-height: 100vh;
+            background:
+                radial-gradient(60rem 40rem at 85% -10%, rgba(155, 107, 255, .35), transparent 60%),
+                radial-gradient(50rem 40rem at -10% 20%, rgba(77, 225, 255, .20), transparent 60%),
+                radial-gradient(45rem 35rem at 70% 110%, rgba(255, 90, 95, .25), transparent 60%),
+                var(--ink);
+            background-attachment: fixed;
+        }
+
+        /* faint grain so the gradients feel printed, not plastic */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: .08;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ---------- Headline: the one big moment ---------- */
+        h1 {
+            font-family: var(--font-display) !important;
+            font-weight: 800;
+            font-size: clamp(2.2rem, 7vw, 3.8rem) !important;
+            line-height: 1;
+            letter-spacing: -.03em;
+            margin-bottom: .6rem !important;
+            background: var(--life);
+            background-size: 220% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: lifeflow 9s ease-in-out infinite alternate;
+        }
+
+        @keyframes lifeflow {
+            to {
+                background-position: 100% 0;
+            }
+        }
+
+        .text-muted {
+            color: var(--muted) !important;
+        }
+
+        /* ---------- Progress: a burning fuse ---------- */
+        #progressWrap {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            padding: .75rem 1rem .6rem;
+            margin: 0 -1rem;
+            background: rgba(18, 13, 51, .72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--glass-edge);
+        }
+
+        .progress {
+            background: rgba(255, 255, 255, .08);
+            border-radius: 99px;
+            overflow: visible;
+        }
+
+        .progress-bar {
+            position: relative;
+            border-radius: 99px;
+            background: var(--life);
+            background-size: 300% 100%;
+            animation: lifeflow 4s linear infinite alternate;
+            transition: width .45s cubic-bezier(.2, .9, .3, 1);
+            box-shadow: 0 0 14px rgba(155, 107, 255, .8);
+        }
+
+        .progress-bar::after {
+            content: "";
+            position: absolute;
+            right: -7px;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            transform: translateY(-50%);
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(255, 179, 71, .35), 0 0 18px 6px var(--amber);
+            animation: spark .9s ease-in-out infinite alternate;
+        }
+
+        @keyframes spark {
+            to {
+                box-shadow: 0 0 0 7px rgba(255, 90, 95, .25), 0 0 26px 10px var(--flame);
+            }
+        }
+
+        /* ---------- Cards: frosted glass with a light-catching edge ---------- */
+        .card {
+            position: relative;
+            background: var(--glass) !important;
+            color: var(--text);
+            border: 1px solid var(--glass-edge) !important;
+            border-radius: 1.6rem !important;
+            backdrop-filter: blur(18px) saturate(140%);
+            -webkit-backdrop-filter: blur(18px) saturate(140%);
+            box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255, 255, 255, .15) !important;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            width: 22rem;
+            height: 22rem;
+            top: -12rem;
+            right: -9rem;
+            background: radial-gradient(closest-side, rgba(155, 107, 255, .35), transparent);
+            pointer-events: none;
+        }
+
+        .card:nth-of-type(even)::before {
+            left: -9rem;
+            right: auto;
+            background: radial-gradient(closest-side, rgba(77, 225, 255, .25), transparent);
+        }
+
+        .card h2 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            letter-spacing: -.01em;
+            display: flex;
+            align-items: center;
+            gap: .9rem;
+            font-size: 1.45rem !important;
+        }
+
+        .sec-num {
+            display: inline-grid;
+            place-items: center;
+            width: 2.4rem;
+            height: 2.4rem;
+            border-radius: 50%;
+            font-size: 1rem;
+            color: var(--ink);
+            font-weight: 800;
+            background: conic-gradient(from var(--angle), var(--ice), var(--violet), var(--flame), var(--amber), var(--ice));
+            animation: spin 6s linear infinite;
+            box-shadow: 0 0 22px rgba(155, 107, 255, .55);
+        }
+
+        @keyframes spin {
+            to {
+                --angle: 360deg;
+            }
+        }
+
+        /* ---------- Questions ---------- */
+        .q {
+            padding: 1.1rem 0;
+            border-top: 1px dashed rgba(255, 255, 255, .1);
+            transition: background .3s, box-shadow .3s;
+            border-radius: 1rem;
+        }
+
+        .q:first-of-type {
+            border-top: 0;
+        }
+
+        .q-label,
+        .q-label label {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: .6rem;
+            display: block;
+            color: #fff;
+        }
+
+        .form-text {
+            color: var(--muted) !important;
+        }
+
+        .q-err {
+            display: none;
+            color: var(--flame);
+            font-weight: 500;
+            font-size: .875rem;
+            margin-top: .5rem;
+        }
+
+        .q.missing {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            background: rgba(255, 90, 95, .08);
+            box-shadow: inset 3px 0 0 var(--flame), 0 0 0 1px rgba(255, 90, 95, .35);
+            animation: shake .45s;
+        }
+
+        .q.missing .q-err {
+            display: block;
+        }
+
+        @keyframes shake {
+
+            20%,
+            60% {
+                transform: translateX(-7px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(7px);
+            }
+        }
+
+        /* ---------- Choice buttons: pills that ignite when picked ---------- */
+        .btn-outline-primary {
+            --bs-btn-color: var(--text);
+            --bs-btn-border-color: var(--glass-edge);
+            --bs-btn-hover-color: #fff;
+            --bs-btn-hover-bg: rgba(155, 107, 255, .18);
+            --bs-btn-hover-border-color: var(--violet);
+            --bs-btn-active-bg: transparent;
+            border-radius: 99px;
+            padding: .5rem 1.05rem;
+            font-weight: 500;
+            background: rgba(255, 255, 255, .04);
+            transition: transform .18s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s, background .25s, border-color .25s;
+        }
+
+        .btn-outline-primary:hover {
+            transform: translateY(-2px) scale(1.03);
+        }
+
+        .btn-check:checked+.btn-outline-primary {
+            color: var(--ink);
+            font-weight: 600;
+            border-color: transparent;
+            background: var(--life);
+            background-size: 200% 100%;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, .12), 0 8px 26px -4px rgba(155, 107, 255, .8);
+            animation: lifeflow 3s ease-in-out infinite alternate;
+            transform: translateY(-2px) scale(1.04);
+        }
+
+        .btn-check:focus-visible+.btn-outline-primary,
+        .form-control:focus-visible,
+        .btn:focus-visible {
+            outline: 3px solid var(--ice);
+            outline-offset: 3px;
+        }
+
+        .scale-btn {
+            min-width: 2.7rem;
+            padding-inline: 0;
+            text-align: center;
+        }
+
+        /* ---------- Number inputs ---------- */
+        .form-control,
+        .input-group-text {
+            background: rgba(255, 255, 255, .06);
+            color: #fff;
+            border: 1px solid var(--glass-edge);
+            font-size: 1.1rem;
+        }
+
+        .form-control {
+            border-radius: 1rem 0 0 1rem;
+        }
+
+        .input-group-text {
+            border-radius: 0 1rem 1rem 0;
+            color: var(--muted);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, .3);
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, .1);
+            color: #fff;
+            border-color: var(--ice);
+            box-shadow: 0 0 0 .25rem rgba(77, 225, 255, .2);
+        }
+
+        #bmiShow {
+            color: var(--amber);
+            font-size: 1.1rem;
+        }
+
+        /* ---------- Conditional (smoking) blocks slide in ---------- */
+        [data-cond]:not(.d-none) {
+            animation: rise .4s ease-out;
+        }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* ---------- Buttons ---------- */
+        .btn-primary {
+            position: relative;
+            overflow: hidden;
+            border: 0;
+            border-radius: 99px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            letter-spacing: .01em;
+            color: var(--ink);
+            background: var(--life);
+            background-size: 200% 100%;
+            box-shadow: 0 14px 40px -10px rgba(255, 90, 95, .7);
+            transition: transform .2s cubic-bezier(.3, 1.6, .5, 1), box-shadow .3s;
+        }
+
+        .btn-primary::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            transform: translateX(-120%) skewX(-20deg);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
+        }
+
+        .btn-primary:hover {
+            color: var(--ink);
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 20px 50px -8px rgba(155, 107, 255, .9);
+        }
+
+        .btn-primary:hover::after {
+            transform: translateX(120%) skewX(-20deg);
+            transition: transform .8s;
+        }
+
+        .btn-primary:active {
+            transform: scale(.97);
+        }
+
+        .btn-outline-secondary {
+            color: var(--muted);
+            border-color: var(--glass-edge);
+            border-radius: 99px;
+        }
+
+        .btn-outline-secondary:hover {
+            background: rgba(255, 255, 255, .1);
+            color: #fff;
+            border-color: var(--muted);
+        }
+
+        /* ---------- RESULT: spinning light border, big living number ---------- */
+        #resultBox {
+            position: relative;
+            border: 0;
+            border-radius: 1.8rem;
+            padding: 2rem 2rem 1.6rem;
+            color: var(--text);
+            background: var(--ink-2);
+            isolation: isolate;
+            animation: arrive .9s cubic-bezier(.2, 1.2, .3, 1);
+            box-shadow: 0 0 60px -10px rgba(155, 107, 255, .7) !important;
+        }
+
+        #resultBox::before {
+            content: "";
+            position: absolute;
+            inset: -3px;
+            z-index: -2;
+            border-radius: inherit;
+            background: conic-gradient(from var(--angle), var(--ice), var(--violet), var(--flame), var(--amber), var(--ice));
+            animation: spin 4s linear infinite;
+        }
+
+        #resultBox::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            border-radius: inherit;
+            background: radial-gradient(40rem 14rem at 20% 0%, rgba(155, 107, 255, .35), transparent 70%), var(--ink-2);
+        }
+
+        #resultBox .text-uppercase {
+            color: var(--muted);
+            letter-spacing: .12em;
+        }
+
+        #resultBox .display-6 {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(3rem, 12vw, 5.5rem);
+            line-height: 1.05;
+            letter-spacing: -.04em;
+            background: var(--life);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: lifeflow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes arrive {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(.92) rotate(-1deg);
+                filter: blur(8px);
+            }
+        }
+
+        /* ---------- Debug panel ---------- */
+        details {
+            border: 1px solid var(--glass-edge);
+            border-radius: 1rem;
+            padding: .75rem 1rem;
+            background: var(--glass);
+        }
+
+        summary {
+            cursor: pointer;
+        }
+
+        #sentValues {
+            background: rgba(0, 0, 0, .45) !important;
+            color: var(--ice) !important;
+            max-height: 18rem;
+            overflow: auto;
+            border: 1px solid var(--glass-edge);
+            font-size: .8rem;
+        }
+
+        #formMsg {
+            color: var(--flame) !important;
+            font-weight: 600;
+        }
+
+        ::selection {
+            background: var(--violet);
+            color: #fff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(155, 107, 255, .5);
+            border-radius: 99px;
+        }
+
+        @media (max-width: 576px) {
+            .card-body {
+                padding: 1.25rem !important;
+            }
+
+            .btn-outline-primary {
+                padding: .45rem .85rem;
+                font-size: .92rem;
+            }
+
+            .btn-primary.btn-lg {
+                width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+
+            html {
+                scroll-behavior: auto;
+            }
+        }
+    </style>
+    {% endraw %}
+</head>
+
+<body>
+    <div class="container py-4" style="max-width: 860px;">
+
+        {% if result is defined and result is not none %}
+        <div class="alert alert-success shadow-sm" role="alert" id="resultBox">
+            <div class="small text-uppercase fw-semibold">Estimated years remaining</div>
+            <div class="result">{{ result }} years</div>
+            <div class="small mt-2 mb-0">
+                This is an average-case estimate from a model trained on <strong>synthetic</strong> data. Real lifespans
+                vary
+                by 10+ years either way, so treat it as a learning demo, not medical advice.
+            </div>
+        </div>
+        {% endif %}
+
+        <h1 class="h3 mb-1">Life Expectancy Estimator</h1>
+        <p class="text-muted">Mostly clicks, plus a few numbers. Every answer sends the exact number the model expects.
+        </p>
+
+        <div id="progressWrap">
+            <div class="d-flex justify-content-between small text-muted mb-1">
+                <span id="progressText">0 answered</span><span id="progressPct">0%</span>
+            </div>
+            <div class="progress" style="height:.6rem">
+                <div class="progress-bar" id="progressBar" style="width:0%"></div>
+            </div>
+        </div>
+
+        <form method="POST" action="" id="lifeForm" novalidate class="mt-3">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-4"><span class="sec-num">1</span>About you</h2>
+                    <div class="q" data-q="Age" data-text="1">
+                        <div class="q-label"><label for="Age">How old are you?</label></div>
+                        <div class="form-text mt-0 mb-2">The model was trained on ages 18 to 95.</div>
+                        <div class="input-group" style="max-width:15rem"><input type="number" class="form-control"
+                                id="Age" name="Age" min="18" max="95" step="1" placeholder="e.g. 35" inputmode="decimal"
+                                autocomplete="off"><span class="input-group-text">years</span></div>
+                        <div class="q-err">Enter a number between 18 and 95.</div>
+                    </div>
+                    <div class="q" data-q="Sex">
+                        <div class="q-label">Sex</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Sex" id="Sex_0"
+                                value="0" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sex_0">Female</label><input type="radio" class="btn-check" name="Sex" id="Sex_1"
+                                value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sex_1">Male</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Marital_Status">
+                        <div class="q-label">Marital status</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Marital_Status"
+                                id="Marital_Status_0" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Marital_Status_0">Single</label><input type="radio"
+                                class="btn-check" name="Marital_Status" id="Marital_Status_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Marital_Status_1">Married</label><input type="radio" class="btn-check"
+                                name="Marital_Status" id="Marital_Status_2" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Marital_Status_2">Divorced</label><input
+                                type="radio" class="btn-check" name="Marital_Status" id="Marital_Status_3" value="3"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Marital_Status_3">Widowed</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Employment_Status">
+                        <div class="q-label">Employment</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Employment_Status" id="Employment_Status_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Employment_Status_0">Employed</label><input
+                                type="radio" class="btn-check" name="Employment_Status" id="Employment_Status_1"
+                                value="3" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Employment_Status_1">Student</label><input type="radio" class="btn-check"
+                                name="Employment_Status" id="Employment_Status_2" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Employment_Status_2">Homemaker</label><input
+                                type="radio" class="btn-check" name="Employment_Status" id="Employment_Status_3"
+                                value="2" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Employment_Status_3">Retired</label><input type="radio" class="btn-check"
+                                name="Employment_Status" id="Employment_Status_4" value="4" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Employment_Status_4">Unemployed</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Occupation_Risk">
+                        <div class="q-label">How physically dangerous is your work?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Occupation_Risk"
+                                id="Occupation_Risk_0" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Occupation_Risk_0">Low (office, shop)</label><input
+                                type="radio" class="btn-check" name="Occupation_Risk" id="Occupation_Risk_1" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Occupation_Risk_1">Medium</label><input type="radio" class="btn-check"
+                                name="Occupation_Risk" id="Occupation_Risk_2" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Occupation_Risk_2">High (construction, mining,
+                                etc.)</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Education_Level">
+                        <div class="q-label">Highest education</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Education_Level"
+                                id="Education_Level_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Education_Level_0">None</label><input type="radio"
+                                class="btn-check" name="Education_Level" id="Education_Level_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Education_Level_1">Primary</label><input type="radio" class="btn-check"
+                                name="Education_Level" id="Education_Level_2" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Education_Level_2">Secondary</label><input
+                                type="radio" class="btn-check" name="Education_Level" id="Education_Level_3" value="3"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Education_Level_3">Bachelor's</label><input type="radio" class="btn-check"
+                                name="Education_Level" id="Education_Level_4" value="4" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Education_Level_4">Postgraduate</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Income_Bracket">
+                        <div class="q-label">Household income compared with others in your country</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Income_Bracket"
+                                id="Income_Bracket_0" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Income_Bracket_0">Lowest</label><input type="radio"
+                                class="btn-check" name="Income_Bracket" id="Income_Bracket_1" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Income_Bracket_1">Low</label><input type="radio" class="btn-check"
+                                name="Income_Bracket" id="Income_Bracket_2" value="3" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Income_Bracket_2">Middle</label><input type="radio"
+                                class="btn-check" name="Income_Bracket" id="Income_Bracket_3" value="4"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Income_Bracket_3">High</label><input type="radio" class="btn-check"
+                                name="Income_Bracket" id="Income_Bracket_4" value="5" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Income_Bracket_4">Highest</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-4"><span class="sec-num">2</span>Where you live</h2>
+                    <div class="q" data-q="Development_Level">
+                        <div class="q-label">Where do you live?</div>
+                        <div class="form-text mt-0 mb-2">Based on the UN Human Development Index tiers.</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Development_Level" id="Development_Level_0" value="3" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Development_Level_0">Very high development (e.g.
+                                USA, UK, Japan)</label><input type="radio" class="btn-check" name="Development_Level"
+                                id="Development_Level_1" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Development_Level_1">High (e.g. China, Brazil,
+                                Thailand)</label><input type="radio" class="btn-check" name="Development_Level"
+                                id="Development_Level_2" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Development_Level_2">Medium (e.g. India, Indonesia,
+                                Egypt)</label><input type="radio" class="btn-check" name="Development_Level"
+                                id="Development_Level_3" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Development_Level_3">Low (e.g. Nigeria,
+                                Ethiopia)</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Urban_Rural">
+                        <div class="q-label">Area</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Urban_Rural"
+                                id="Urban_Rural_0" value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Urban_Rural_0">City / town</label><input type="radio" class="btn-check"
+                                name="Urban_Rural" id="Urban_Rural_1" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Urban_Rural_1">Rural / village</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Air_Pollution_PM25">
+                        <div class="q-label">Typical air quality where you live</div>
+                        <div class="form-text mt-0 mb-2">Average PM2.5 outdoor air pollution.</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Air_Pollution_PM25" id="Air_Pollution_PM25_0" value="10" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Air_Pollution_PM25_0">Clean (rural,
+                                coastal)</label><input type="radio" class="btn-check" name="Air_Pollution_PM25"
+                                id="Air_Pollution_PM25_1" value="22" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Air_Pollution_PM25_1">Moderate (many Western
+                                cities)</label><input type="radio" class="btn-check" name="Air_Pollution_PM25"
+                                id="Air_Pollution_PM25_2" value="45" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Air_Pollution_PM25_2">Polluted (many Indian /
+                                Chinese cities)</label><input type="radio" class="btn-check" name="Air_Pollution_PM25"
+                                id="Air_Pollution_PM25_3" value="75" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Air_Pollution_PM25_3">Very polluted (e.g. Delhi in
+                                winter)</label><input type="radio" class="btn-check" name="Air_Pollution_PM25"
+                                id="Air_Pollution_PM25_4" value="110" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Air_Pollution_PM25_4">Hazardous</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Healthcare_Access">
+                        <div class="q-label">How easy is it to get good healthcare?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Healthcare_Access" id="Healthcare_Access_0" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Healthcare_Access_0">Very hard</label><input
+                                type="radio" class="btn-check" name="Healthcare_Access" id="Healthcare_Access_1"
+                                value="2" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Healthcare_Access_1">Hard</label><input type="radio" class="btn-check"
+                                name="Healthcare_Access" id="Healthcare_Access_2" value="3" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Healthcare_Access_2">OK</label><input type="radio"
+                                class="btn-check" name="Healthcare_Access" id="Healthcare_Access_3" value="4"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Healthcare_Access_3">Easy</label><input type="radio" class="btn-check"
+                                name="Healthcare_Access" id="Healthcare_Access_4" value="5" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Healthcare_Access_4">Excellent</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-4"><span class="sec-num">3</span>Body and health numbers</h2>
+                    <div class="q" data-q="Height_cm" data-text="1">
+                        <div class="q-label"><label for="Height_cm">Height</label></div>
+                        <div class="input-group" style="max-width:15rem"><input type="number" class="form-control"
+                                id="Height_cm" name="Height_cm" min="120" max="220" step="0.1" placeholder="e.g. 172"
+                                inputmode="decimal" autocomplete="off"><span class="input-group-text">cm</span></div>
+                        <div class="q-err">Enter a number between 120 and 220.</div>
+                    </div>
+                    <div class="q" data-q="Weight_kg" data-text="1">
+                        <div class="q-label"><label for="Weight_kg">Weight</label></div>
+                        <div class="input-group" style="max-width:15rem"><input type="number" class="form-control"
+                                id="Weight_kg" name="Weight_kg" min="30" max="250" step="0.1" placeholder="e.g. 74"
+                                inputmode="decimal" autocomplete="off"><span class="input-group-text">kg</span></div>
+                        <div class="small text-muted mt-2">BMI: <strong id="bmiShow">-</strong> (calculated
+                            automatically)</div><input type="hidden" name="BMI" id="BMI" value="">
+                        <div class="q-err">Enter a number between 30 and 250.</div>
+                    </div>
+                    <div class="q" data-q="Waist_cm">
+                        <div class="q-label">Waist size (around your belly button)</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Waist_cm"
+                                id="Waist_cm_0" value="75" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Waist_cm_0">Under 80 cm</label><input type="radio" class="btn-check"
+                                name="Waist_cm" id="Waist_cm_1" value="85" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Waist_cm_1">80 to 90 cm</label><input type="radio"
+                                class="btn-check" name="Waist_cm" id="Waist_cm_2" value="95" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Waist_cm_2">90 to 100 cm</label><input type="radio"
+                                class="btn-check" name="Waist_cm" id="Waist_cm_3" value="105" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Waist_cm_3">100 to 110 cm</label><input
+                                type="radio" class="btn-check" name="Waist_cm" id="Waist_cm_4" value="120"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Waist_cm_4">Over 110
+                                cm</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Systolic_BP">
+                        <div class="q-label">Your blood pressure</div>
+                        <div class="form-text mt-0 mb-2">One click sets both the top (systolic) and bottom (diastolic)
+                            numbers.</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Systolic_BP"
+                                id="Systolic_BP_0" value="115" data-dbp="75" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Systolic_BP_0">Normal (about 115/75)</label><input
+                                type="radio" class="btn-check" name="Systolic_BP" id="Systolic_BP_1" value="130"
+                                data-dbp="85" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Systolic_BP_1">Slightly raised (about 130/85)</label><input type="radio"
+                                class="btn-check" name="Systolic_BP" id="Systolic_BP_2" value="145" data-dbp="92"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Systolic_BP_2">High
+                                (about 145/92)</label><input type="radio" class="btn-check" name="Systolic_BP"
+                                id="Systolic_BP_3" value="165" data-dbp="100" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Systolic_BP_3">Very high (165/100 or
+                                more)</label><input type="radio" class="btn-check" name="Systolic_BP" id="Systolic_BP_4"
+                                value="122" data-dbp="78" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Systolic_BP_4">Not sure</label></div><input type="hidden" name="Diastolic_BP"
+                            id="Diastolic_BP" value="">
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Resting_Heart_Rate">
+                        <div class="q-label">Resting heart rate (beats per minute)</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Resting_Heart_Rate" id="Resting_Heart_Rate_0" value="52" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Resting_Heart_Rate_0">Under 55</label><input
+                                type="radio" class="btn-check" name="Resting_Heart_Rate" id="Resting_Heart_Rate_1"
+                                value="60" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Resting_Heart_Rate_1">55 to 65</label><input type="radio" class="btn-check"
+                                name="Resting_Heart_Rate" id="Resting_Heart_Rate_2" value="70" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Resting_Heart_Rate_2">66 to 75</label><input
+                                type="radio" class="btn-check" name="Resting_Heart_Rate" id="Resting_Heart_Rate_3"
+                                value="83" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Resting_Heart_Rate_3">76 to 90</label><input type="radio" class="btn-check"
+                                name="Resting_Heart_Rate" id="Resting_Heart_Rate_4" value="95" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Resting_Heart_Rate_4">Over 90</label><input
+                                type="radio" class="btn-check" name="Resting_Heart_Rate" id="Resting_Heart_Rate_5"
+                                value="72" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Resting_Heart_Rate_5">Not sure</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Total_Cholesterol">
+                        <div class="q-label">Total cholesterol (mg/dL)</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Total_Cholesterol" id="Total_Cholesterol_0" value="180" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Total_Cholesterol_0">Desirable (under
+                                200)</label><input type="radio" class="btn-check" name="Total_Cholesterol"
+                                id="Total_Cholesterol_1" value="220" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Total_Cholesterol_1">Borderline (200 to
+                                239)</label><input type="radio" class="btn-check" name="Total_Cholesterol"
+                                id="Total_Cholesterol_2" value="260" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Total_Cholesterol_2">High (240+)</label><input
+                                type="radio" class="btn-check" name="Total_Cholesterol" id="Total_Cholesterol_3"
+                                value="195" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Total_Cholesterol_3">Not sure</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="HDL_Cholesterol">
+                        <div class="q-label">HDL ("good") cholesterol (mg/dL)</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="HDL_Cholesterol"
+                                id="HDL_Cholesterol_0" value="35" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="HDL_Cholesterol_0">Low (under 40)</label><input
+                                type="radio" class="btn-check" name="HDL_Cholesterol" id="HDL_Cholesterol_1" value="50"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="HDL_Cholesterol_1">Average (40 to 59)</label><input type="radio" class="btn-check"
+                                name="HDL_Cholesterol" id="HDL_Cholesterol_2" value="68" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="HDL_Cholesterol_2">High (60+)</label><input
+                                type="radio" class="btn-check" name="HDL_Cholesterol" id="HDL_Cholesterol_3" value="52"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="HDL_Cholesterol_3">Not
+                                sure</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Fasting_Glucose">
+                        <div class="q-label">Fasting blood sugar (mg/dL)</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Fasting_Glucose"
+                                id="Fasting_Glucose_0" value="90" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Fasting_Glucose_0">Normal (under 100)</label><input
+                                type="radio" class="btn-check" name="Fasting_Glucose" id="Fasting_Glucose_1" value="110"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Fasting_Glucose_1">Raised
+                                (100 to 125)</label><input type="radio" class="btn-check" name="Fasting_Glucose"
+                                id="Fasting_Glucose_2" value="145" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Fasting_Glucose_2">Diabetic range
+                                (126+)</label><input type="radio" class="btn-check" name="Fasting_Glucose"
+                                id="Fasting_Glucose_3" value="95" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Fasting_Glucose_3">Not sure</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-4"><span class="sec-num">4</span>Medical history</h2>
+                    <div class="q" data-q="Diabetes_Status">
+                        <div class="q-label">Diabetes</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Diabetes_Status"
+                                id="Diabetes_Status_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Diabetes_Status_0">No</label><input type="radio"
+                                class="btn-check" name="Diabetes_Status" id="Diabetes_Status_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Diabetes_Status_1">Prediabetes</label><input type="radio" class="btn-check"
+                                name="Diabetes_Status" id="Diabetes_Status_2" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Diabetes_Status_2">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Hypertension">
+                        <div class="q-label">Diagnosed with high blood pressure?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Hypertension"
+                                id="Hypertension_0" value="0" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Hypertension_0">No</label><input type="radio" class="btn-check" name="Hypertension"
+                                id="Hypertension_1" value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Hypertension_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Heart_Disease">
+                        <div class="q-label">Heart disease (heart attack, angina, heart failure)?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Heart_Disease"
+                                id="Heart_Disease_0" value="0" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Heart_Disease_0">No</label><input type="radio" class="btn-check"
+                                name="Heart_Disease" id="Heart_Disease_1" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Heart_Disease_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Stroke_History">
+                        <div class="q-label">Ever had a stroke?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Stroke_History"
+                                id="Stroke_History_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Stroke_History_0">No</label><input type="radio"
+                                class="btn-check" name="Stroke_History" id="Stroke_History_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Stroke_History_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Cancer_History">
+                        <div class="q-label">Ever had cancer?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Cancer_History"
+                                id="Cancer_History_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Cancer_History_0">No</label><input type="radio"
+                                class="btn-check" name="Cancer_History" id="Cancer_History_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Cancer_History_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Chronic_Lung_Disease">
+                        <div class="q-label">Chronic lung disease (COPD, chronic bronchitis)?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Chronic_Lung_Disease" id="Chronic_Lung_Disease_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Chronic_Lung_Disease_0">No</label><input type="radio" class="btn-check"
+                                name="Chronic_Lung_Disease" id="Chronic_Lung_Disease_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Chronic_Lung_Disease_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Kidney_Disease">
+                        <div class="q-label">Chronic kidney disease?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Kidney_Disease"
+                                id="Kidney_Disease_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Kidney_Disease_0">No</label><input type="radio"
+                                class="btn-check" name="Kidney_Disease" id="Kidney_Disease_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Kidney_Disease_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Depression_Anxiety">
+                        <div class="q-label">Diagnosed depression or anxiety?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Depression_Anxiety" id="Depression_Anxiety_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Depression_Anxiety_0">No</label><input type="radio"
+                                class="btn-check" name="Depression_Anxiety" id="Depression_Anxiety_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Depression_Anxiety_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Number_Of_Medications">
+                        <div class="q-label">Regular prescription medicines you take</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Number_Of_Medications" id="Number_Of_Medications_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Number_Of_Medications_0">None</label><input type="radio" class="btn-check"
+                                name="Number_Of_Medications" id="Number_Of_Medications_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Number_Of_Medications_1">1</label><input type="radio" class="btn-check"
+                                name="Number_Of_Medications" id="Number_Of_Medications_2" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Number_Of_Medications_2">2</label><input type="radio" class="btn-check"
+                                name="Number_Of_Medications" id="Number_Of_Medications_3" value="3"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Number_Of_Medications_3">3</label><input type="radio" class="btn-check"
+                                name="Number_Of_Medications" id="Number_Of_Medications_4" value="4"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Number_Of_Medications_4">4</label><input type="radio" class="btn-check"
+                                name="Number_Of_Medications" id="Number_Of_Medications_5" value="6"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Number_Of_Medications_5">5 or more</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Hospitalizations_Last_5Yrs">
+                        <div class="q-label">Overnight hospital stays in the last 5 years</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Hospitalizations_Last_5Yrs" id="Hospitalizations_Last_5Yrs_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Hospitalizations_Last_5Yrs_0">None</label><input type="radio" class="btn-check"
+                                name="Hospitalizations_Last_5Yrs" id="Hospitalizations_Last_5Yrs_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Hospitalizations_Last_5Yrs_1">1</label><input type="radio" class="btn-check"
+                                name="Hospitalizations_Last_5Yrs" id="Hospitalizations_Last_5Yrs_2" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Hospitalizations_Last_5Yrs_2">2</label><input type="radio" class="btn-check"
+                                name="Hospitalizations_Last_5Yrs" id="Hospitalizations_Last_5Yrs_3" value="4"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Hospitalizations_Last_5Yrs_3">3 or more</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Annual_Checkup">
+                        <div class="q-label">Do you have a medical check-up every year?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Annual_Checkup"
+                                id="Annual_Checkup_0" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Annual_Checkup_0">No</label><input type="radio"
+                                class="btn-check" name="Annual_Checkup" id="Annual_Checkup_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Annual_Checkup_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Vaccinated">
+                        <div class="q-label">Up to date on recommended vaccines?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Vaccinated"
+                                id="Vaccinated_0" value="0" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Vaccinated_0">No</label><input type="radio" class="btn-check" name="Vaccinated"
+                                id="Vaccinated_1" value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Vaccinated_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-4"><span class="sec-num">5</span>Family history</h2>
+                    <div class="q" data-q="Parents_Lived_To_80">
+                        <div class="q-label">How many of your parents lived to 80 or beyond?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Parents_Lived_To_80" id="Parents_Lived_To_80_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Parents_Lived_To_80_0">Both</label><input type="radio" class="btn-check"
+                                name="Parents_Lived_To_80" id="Parents_Lived_To_80_1" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Parents_Lived_To_80_1">One</label><input type="radio" class="btn-check"
+                                name="Parents_Lived_To_80" id="Parents_Lived_To_80_2" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Parents_Lived_To_80_2">Neither</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Family_Heart_Disease">
+                        <div class="q-label">Close relative with early heart disease?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Family_Heart_Disease" id="Family_Heart_Disease_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Family_Heart_Disease_0">No</label><input type="radio" class="btn-check"
+                                name="Family_Heart_Disease" id="Family_Heart_Disease_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Family_Heart_Disease_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Family_Cancer">
+                        <div class="q-label">Close relative with cancer?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Family_Cancer"
+                                id="Family_Cancer_0" value="0" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Family_Cancer_0">No</label><input type="radio" class="btn-check"
+                                name="Family_Cancer" id="Family_Cancer_1" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Family_Cancer_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-4"><span class="sec-num">6</span>Lifestyle</h2>
+                    <div class="q" data-q="Smoking_Status">
+                        <div class="q-label">Do you smoke?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Smoking_Status"
+                                id="Smoking_Status_0" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Smoking_Status_0">Never smoked</label><input
+                                type="radio" class="btn-check" name="Smoking_Status" id="Smoking_Status_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Smoking_Status_1">Used to
+                                smoke</label><input type="radio" class="btn-check" name="Smoking_Status"
+                                id="Smoking_Status_2" value="0" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Smoking_Status_2">Smoke now</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div data-cond="Smoking_Status=0" class="d-none">
+                        <div class="q" data-q="Cigarettes_Per_Day">
+                            <div class="q-label">Cigarettes per day</div>
+                            <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                    name="Cigarettes_Per_Day" id="Cigarettes_Per_Day_0" value="3"
+                                    autocomplete="off"><label class="btn btn-outline-primary"
+                                    for="Cigarettes_Per_Day_0">1 to 5</label><input type="radio" class="btn-check"
+                                    name="Cigarettes_Per_Day" id="Cigarettes_Per_Day_1" value="8"
+                                    autocomplete="off"><label class="btn btn-outline-primary"
+                                    for="Cigarettes_Per_Day_1">6 to 10</label><input type="radio" class="btn-check"
+                                    name="Cigarettes_Per_Day" id="Cigarettes_Per_Day_2" value="15"
+                                    autocomplete="off"><label class="btn btn-outline-primary"
+                                    for="Cigarettes_Per_Day_2">11 to 20</label><input type="radio" class="btn-check"
+                                    name="Cigarettes_Per_Day" id="Cigarettes_Per_Day_3" value="25"
+                                    autocomplete="off"><label class="btn btn-outline-primary"
+                                    for="Cigarettes_Per_Day_3">More than 20</label></div>
+                            <div class="q-err">Please choose one.</div>
+                        </div>
+                    </div><input type="hidden" name="Cigarettes_Per_Day" id="Cigarettes_Per_Day_default" value="0">
+                    <div data-cond="Smoking_Status=1" class="d-none">
+                        <div class="q" data-q="Years_Since_Quit">
+                            <div class="q-label">How long since you quit?</div>
+                            <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                    name="Years_Since_Quit" id="Years_Since_Quit_0" value="1" autocomplete="off"><label
+                                    class="btn btn-outline-primary" for="Years_Since_Quit_0">Under 2 years</label><input
+                                    type="radio" class="btn-check" name="Years_Since_Quit" id="Years_Since_Quit_1"
+                                    value="3.5" autocomplete="off"><label class="btn btn-outline-primary"
+                                    for="Years_Since_Quit_1">2 to 5 years</label><input type="radio" class="btn-check"
+                                    name="Years_Since_Quit" id="Years_Since_Quit_2" value="7.5"
+                                    autocomplete="off"><label class="btn btn-outline-primary" for="Years_Since_Quit_2">5
+                                    to 10 years</label><input type="radio" class="btn-check" name="Years_Since_Quit"
+                                    id="Years_Since_Quit_3" value="15" autocomplete="off"><label
+                                    class="btn btn-outline-primary" for="Years_Since_Quit_3">Over 10 years</label></div>
+                            <div class="q-err">Please choose one.</div>
+                        </div>
+                    </div><input type="hidden" name="Years_Since_Quit" id="Years_Since_Quit_default" value="0">
+                    <div class="q" data-q="Alcohol_Drinks_Per_Week">
+                        <div class="q-label">Alcoholic drinks per week</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Alcohol_Drinks_Per_Week" id="Alcohol_Drinks_Per_Week_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Alcohol_Drinks_Per_Week_0">None</label><input type="radio" class="btn-check"
+                                name="Alcohol_Drinks_Per_Week" id="Alcohol_Drinks_Per_Week_1" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Alcohol_Drinks_Per_Week_1">1 to 4</label><input type="radio" class="btn-check"
+                                name="Alcohol_Drinks_Per_Week" id="Alcohol_Drinks_Per_Week_2" value="7"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Alcohol_Drinks_Per_Week_2">5 to 10</label><input type="radio" class="btn-check"
+                                name="Alcohol_Drinks_Per_Week" id="Alcohol_Drinks_Per_Week_3" value="15"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Alcohol_Drinks_Per_Week_3">11 to 20</label><input type="radio" class="btn-check"
+                                name="Alcohol_Drinks_Per_Week" id="Alcohol_Drinks_Per_Week_4" value="25"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Alcohol_Drinks_Per_Week_4">Over 20</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Exercise_Min_Per_Week">
+                        <div class="q-label">Exercise per week (brisk walking or harder)</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Exercise_Min_Per_Week" id="Exercise_Min_Per_Week_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Exercise_Min_Per_Week_0">None</label><input type="radio" class="btn-check"
+                                name="Exercise_Min_Per_Week" id="Exercise_Min_Per_Week_1" value="40"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Exercise_Min_Per_Week_1">Under 60 min</label><input type="radio" class="btn-check"
+                                name="Exercise_Min_Per_Week" id="Exercise_Min_Per_Week_2" value="120"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Exercise_Min_Per_Week_2">1 to 2.5 hours</label><input type="radio"
+                                class="btn-check" name="Exercise_Min_Per_Week" id="Exercise_Min_Per_Week_3" value="225"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Exercise_Min_Per_Week_3">2.5 to 5 hours</label><input type="radio"
+                                class="btn-check" name="Exercise_Min_Per_Week" id="Exercise_Min_Per_Week_4" value="400"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Exercise_Min_Per_Week_4">Over 5 hours</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Steps_Per_Day">
+                        <div class="q-label">Steps per day</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Steps_Per_Day"
+                                id="Steps_Per_Day_0" value="2500" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Steps_Per_Day_0">Under 3,000</label><input
+                                type="radio" class="btn-check" name="Steps_Per_Day" id="Steps_Per_Day_1" value="4000"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Steps_Per_Day_1">3,000 to
+                                5,000</label><input type="radio" class="btn-check" name="Steps_Per_Day"
+                                id="Steps_Per_Day_2" value="6500" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Steps_Per_Day_2">5,000 to 8,000</label><input
+                                type="radio" class="btn-check" name="Steps_Per_Day" id="Steps_Per_Day_3" value="10000"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Steps_Per_Day_3">8,000 to
+                                12,000</label><input type="radio" class="btn-check" name="Steps_Per_Day"
+                                id="Steps_Per_Day_4" value="14000" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Steps_Per_Day_4">Over 12,000</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Diet_Quality">
+                        <div class="q-label">How healthy is your diet?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Diet_Quality"
+                                id="Diet_Quality_0" value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Diet_Quality_0">Poor</label><input type="radio" class="btn-check"
+                                name="Diet_Quality" id="Diet_Quality_1" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Diet_Quality_1">Fair</label><input type="radio"
+                                class="btn-check" name="Diet_Quality" id="Diet_Quality_2" value="3"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Diet_Quality_2">Good</label><input type="radio" class="btn-check"
+                                name="Diet_Quality" id="Diet_Quality_3" value="4" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Diet_Quality_3">Very good</label><input
+                                type="radio" class="btn-check" name="Diet_Quality" id="Diet_Quality_4" value="5"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Diet_Quality_4">Excellent</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Fruit_Veg_Servings_Per_Day">
+                        <div class="q-label">Fruit and vegetable servings per day</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Fruit_Veg_Servings_Per_Day" id="Fruit_Veg_Servings_Per_Day_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Fruit_Veg_Servings_Per_Day_0">None</label><input type="radio" class="btn-check"
+                                name="Fruit_Veg_Servings_Per_Day" id="Fruit_Veg_Servings_Per_Day_1" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Fruit_Veg_Servings_Per_Day_1">1</label><input type="radio" class="btn-check"
+                                name="Fruit_Veg_Servings_Per_Day" id="Fruit_Veg_Servings_Per_Day_2" value="3"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Fruit_Veg_Servings_Per_Day_2">2 to 3</label><input type="radio" class="btn-check"
+                                name="Fruit_Veg_Servings_Per_Day" id="Fruit_Veg_Servings_Per_Day_3" value="5"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Fruit_Veg_Servings_Per_Day_3">4 to 5</label><input type="radio" class="btn-check"
+                                name="Fruit_Veg_Servings_Per_Day" id="Fruit_Veg_Servings_Per_Day_4" value="8"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Fruit_Veg_Servings_Per_Day_4">6 or more</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Sugary_Drinks_Per_Week">
+                        <div class="q-label">Sugary drinks per week (soda, sweet tea, juice)</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Sugary_Drinks_Per_Week" id="Sugary_Drinks_Per_Week_0" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sugary_Drinks_Per_Week_0">None</label><input type="radio" class="btn-check"
+                                name="Sugary_Drinks_Per_Week" id="Sugary_Drinks_Per_Week_1" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sugary_Drinks_Per_Week_1">1 to 3</label><input type="radio" class="btn-check"
+                                name="Sugary_Drinks_Per_Week" id="Sugary_Drinks_Per_Week_2" value="5"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sugary_Drinks_Per_Week_2">4 to 7</label><input type="radio" class="btn-check"
+                                name="Sugary_Drinks_Per_Week" id="Sugary_Drinks_Per_Week_3" value="10"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sugary_Drinks_Per_Week_3">8 to 14</label><input type="radio" class="btn-check"
+                                name="Sugary_Drinks_Per_Week" id="Sugary_Drinks_Per_Week_4" value="20"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sugary_Drinks_Per_Week_4">15 or more</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Sleep_Hours">
+                        <div class="q-label">Hours of sleep per night</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Sleep_Hours"
+                                id="Sleep_Hours_0" value="4.5" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sleep_Hours_0">Under 5</label><input type="radio" class="btn-check"
+                                name="Sleep_Hours" id="Sleep_Hours_1" value="5.5" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Sleep_Hours_1">5 to 6</label><input type="radio"
+                                class="btn-check" name="Sleep_Hours" id="Sleep_Hours_2" value="6.5"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Sleep_Hours_2">6 to
+                                7</label><input type="radio" class="btn-check" name="Sleep_Hours" id="Sleep_Hours_3"
+                                value="7.5" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sleep_Hours_3">7 to 8</label><input type="radio" class="btn-check"
+                                name="Sleep_Hours" id="Sleep_Hours_4" value="8.5" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Sleep_Hours_4">8 to 9</label><input type="radio"
+                                class="btn-check" name="Sleep_Hours" id="Sleep_Hours_5" value="9.5"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Sleep_Hours_5">Over
+                                9</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Sleep_Quality">
+                        <div class="q-label">Quality of your sleep</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Sleep_Quality"
+                                id="Sleep_Quality_0" value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sleep_Quality_0">Very poor</label><input type="radio" class="btn-check"
+                                name="Sleep_Quality" id="Sleep_Quality_1" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Sleep_Quality_1">Poor</label><input type="radio"
+                                class="btn-check" name="Sleep_Quality" id="Sleep_Quality_2" value="3"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sleep_Quality_2">OK</label><input type="radio" class="btn-check"
+                                name="Sleep_Quality" id="Sleep_Quality_3" value="4" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Sleep_Quality_3">Good</label><input type="radio"
+                                class="btn-check" name="Sleep_Quality" id="Sleep_Quality_4" value="5"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sleep_Quality_4">Excellent</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Sitting_Hours_Per_Day">
+                        <div class="q-label">Hours sitting per day</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Sitting_Hours_Per_Day" id="Sitting_Hours_Per_Day_0" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sitting_Hours_Per_Day_0">Under 3</label><input type="radio" class="btn-check"
+                                name="Sitting_Hours_Per_Day" id="Sitting_Hours_Per_Day_1" value="4"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sitting_Hours_Per_Day_1">3 to 5</label><input type="radio" class="btn-check"
+                                name="Sitting_Hours_Per_Day" id="Sitting_Hours_Per_Day_2" value="6.5"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sitting_Hours_Per_Day_2">5 to 8</label><input type="radio" class="btn-check"
+                                name="Sitting_Hours_Per_Day" id="Sitting_Hours_Per_Day_3" value="9.5"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sitting_Hours_Per_Day_3">8 to 11</label><input type="radio" class="btn-check"
+                                name="Sitting_Hours_Per_Day" id="Sitting_Hours_Per_Day_4" value="12"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Sitting_Hours_Per_Day_4">Over 11</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Drug_Use">
+                        <div class="q-label">Recreational drug use</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Drug_Use"
+                                id="Drug_Use_0" value="0" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Drug_Use_0">Never</label><input type="radio" class="btn-check" name="Drug_Use"
+                                id="Drug_Use_1" value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Drug_Use_1">Occasionally</label><input type="radio" class="btn-check"
+                                name="Drug_Use" id="Drug_Use_2" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Drug_Use_2">Regularly</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Driving_Habits">
+                        <div class="q-label">Your driving</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Driving_Habits"
+                                id="Driving_Habits_0" value="2" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Driving_Habits_0">Safe</label><input type="radio"
+                                class="btn-check" name="Driving_Habits" id="Driving_Habits_1" value="0"
+                                autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Driving_Habits_1">Sometimes risky (speeding)</label><input type="radio"
+                                class="btn-check" name="Driving_Habits" id="Driving_Habits_2" value="1"
+                                autocomplete="off"><label class="btn btn-outline-primary" for="Driving_Habits_2">Often
+                                risky</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-4"><span class="sec-num">7</span>Mind and social life</h2>
+                    <div class="q" data-q="Social_Connection">
+                        <div class="q-label">How connected do you feel to friends and family?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Social_Connection" id="Social_Connection_0" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Social_Connection_0">Isolated</label><input
+                                type="radio" class="btn-check" name="Social_Connection" id="Social_Connection_1"
+                                value="2" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Social_Connection_1">Little</label><input type="radio" class="btn-check"
+                                name="Social_Connection" id="Social_Connection_2" value="3" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Social_Connection_2">Some</label><input
+                                type="radio" class="btn-check" name="Social_Connection" id="Social_Connection_3"
+                                value="4" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Social_Connection_3">Good</label><input type="radio" class="btn-check"
+                                name="Social_Connection" id="Social_Connection_4" value="5" autocomplete="off"><label
+                                class="btn btn-outline-primary" for="Social_Connection_4">Very strong</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Stress_Level">
+                        <div class="q-label">Your usual stress level</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Stress_Level"
+                                id="Stress_Level_1" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Stress_Level_1">1</label><input
+                                type="radio" class="btn-check" name="Stress_Level" id="Stress_Level_2" value="2"
+                                autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Stress_Level_2">2</label><input type="radio" class="btn-check" name="Stress_Level"
+                                id="Stress_Level_3" value="3" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Stress_Level_3">3</label><input
+                                type="radio" class="btn-check" name="Stress_Level" id="Stress_Level_4" value="4"
+                                autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Stress_Level_4">4</label><input type="radio" class="btn-check" name="Stress_Level"
+                                id="Stress_Level_5" value="5" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Stress_Level_5">5</label><input
+                                type="radio" class="btn-check" name="Stress_Level" id="Stress_Level_6" value="6"
+                                autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Stress_Level_6">6</label><input type="radio" class="btn-check" name="Stress_Level"
+                                id="Stress_Level_7" value="7" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Stress_Level_7">7</label><input
+                                type="radio" class="btn-check" name="Stress_Level" id="Stress_Level_8" value="8"
+                                autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Stress_Level_8">8</label><input type="radio" class="btn-check" name="Stress_Level"
+                                id="Stress_Level_9" value="9" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Stress_Level_9">9</label><input
+                                type="radio" class="btn-check" name="Stress_Level" id="Stress_Level_10" value="10"
+                                autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Stress_Level_10">10</label></div>
+                        <div class="d-flex justify-content-between small text-muted mt-1" style="max-width:34rem">
+                            <span>1 = very low</span><span>10 = very high</span>
+                        </div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Life_Satisfaction">
+                        <div class="q-label">How satisfied are you with your life?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check"
+                                name="Life_Satisfaction" id="Life_Satisfaction_1" value="1" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Life_Satisfaction_1">1</label><input
+                                type="radio" class="btn-check" name="Life_Satisfaction" id="Life_Satisfaction_2"
+                                value="2" autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Life_Satisfaction_2">2</label><input type="radio" class="btn-check"
+                                name="Life_Satisfaction" id="Life_Satisfaction_3" value="3" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Life_Satisfaction_3">3</label><input
+                                type="radio" class="btn-check" name="Life_Satisfaction" id="Life_Satisfaction_4"
+                                value="4" autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Life_Satisfaction_4">4</label><input type="radio" class="btn-check"
+                                name="Life_Satisfaction" id="Life_Satisfaction_5" value="5" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Life_Satisfaction_5">5</label><input
+                                type="radio" class="btn-check" name="Life_Satisfaction" id="Life_Satisfaction_6"
+                                value="6" autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Life_Satisfaction_6">6</label><input type="radio" class="btn-check"
+                                name="Life_Satisfaction" id="Life_Satisfaction_7" value="7" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Life_Satisfaction_7">7</label><input
+                                type="radio" class="btn-check" name="Life_Satisfaction" id="Life_Satisfaction_8"
+                                value="8" autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Life_Satisfaction_8">8</label><input type="radio" class="btn-check"
+                                name="Life_Satisfaction" id="Life_Satisfaction_9" value="9" autocomplete="off"><label
+                                class="btn btn-outline-primary scale-btn" for="Life_Satisfaction_9">9</label><input
+                                type="radio" class="btn-check" name="Life_Satisfaction" id="Life_Satisfaction_10"
+                                value="10" autocomplete="off"><label class="btn btn-outline-primary scale-btn"
+                                for="Life_Satisfaction_10">10</label></div>
+                        <div class="d-flex justify-content-between small text-muted mt-1" style="max-width:34rem">
+                            <span>1 = very unhappy</span><span>10 = very happy</span>
+                        </div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                    <div class="q" data-q="Owns_Pet">
+                        <div class="q-label">Do you own a pet?</div>
+                        <div class="d-flex flex-wrap gap-2"><input type="radio" class="btn-check" name="Owns_Pet"
+                                id="Owns_Pet_0" value="0" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Owns_Pet_0">No</label><input type="radio" class="btn-check" name="Owns_Pet"
+                                id="Owns_Pet_1" value="1" autocomplete="off"><label class="btn btn-outline-primary"
+                                for="Owns_Pet_1">Yes</label></div>
+                        <div class="q-err">Please choose one.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 align-items-center mb-3">
+                <button type="submit" class="btn btn-primary btn-lg px-5">Estimate</button>
+                <button type="button" id="resetBtn" class="btn btn-outline-secondary">Reset</button>
+                <span id="formMsg" class="text-danger small ms-2"></span>
+            </div>
+
+            <details class="mb-5">
+                <summary class="small text-muted">Show the numbers that will be sent to the model</summary>
+                <pre id="sentValues" class="bg-dark text-light rounded p-3 mt-2"></pre>
+            </details>
+        </form>
+        <!-- {% if result %}
+        <div class="result">{{ result }}</div>
+        {% endif %} -->
+    </div>
+
+    {% raw %}
+    <script>
+        var FEATURES = ["Age", "Sex", "Development_Level", "Urban_Rural", "Education_Level", "Income_Bracket", "Marital_Status", "Employment_Status", "Occupation_Risk", "Height_cm", "Weight_kg", "BMI", "Waist_cm", "Systolic_BP", "Diastolic_BP", "Resting_Heart_Rate", "Total_Cholesterol", "HDL_Cholesterol", "Fasting_Glucose", "Smoking_Status", "Cigarettes_Per_Day", "Years_Since_Quit", "Alcohol_Drinks_Per_Week", "Exercise_Min_Per_Week", "Steps_Per_Day", "Diet_Quality", "Fruit_Veg_Servings_Per_Day", "Sugary_Drinks_Per_Week", "Sleep_Hours", "Sleep_Quality", "Sitting_Hours_Per_Day", "Drug_Use", "Driving_Habits", "Diabetes_Status", "Hypertension", "Heart_Disease", "Stroke_History", "Cancer_History", "Chronic_Lung_Disease", "Kidney_Disease", "Depression_Anxiety", "Number_Of_Medications", "Hospitalizations_Last_5Yrs", "Annual_Checkup", "Vaccinated", "Parents_Lived_To_80", "Family_Heart_Disease", "Family_Cancer", "Social_Connection", "Stress_Level", "Life_Satisfaction", "Owns_Pet", "Air_Pollution_PM25", "Healthcare_Access"];
+        var form = document.getElementById("lifeForm");
+
+        function checkedValue(name) {
+            var el = form.querySelector('input[type=radio][name="' + name + '"]:checked');
+            return el ? el.value : null;
+        }
+
+        // Smoking follow-up questions appear only when relevant; otherwise a hidden 0 is submitted
+        function updateConditionals() {
+            form.querySelectorAll("[data-cond]").forEach(function (block) {
+                var parts = block.dataset.cond.split("=");
+                var active = checkedValue(parts[0]) === parts[1];
+                block.classList.toggle("d-none", !active);
+                block.querySelectorAll("input[type=radio]").forEach(function (r) { r.disabled = !active; });
+                var inner = block.querySelector("[data-q]");
+                var hidden = document.getElementById(inner.dataset.q + "_default");
+                if (hidden) hidden.disabled = active;
+            });
+        }
+
+        function updateBMI() {
+            var h = parseFloat(document.getElementById("Height_cm").value);
+            var w = parseFloat(document.getElementById("Weight_kg").value);
+            var show = document.getElementById("bmiShow"), field = document.getElementById("BMI");
+            if (h > 0 && w > 0) {
+                var bmi = (w / Math.pow(h / 100, 2)).toFixed(1);
+                field.value = bmi; show.textContent = bmi;
+            } else { field.value = ""; show.textContent = "-"; }
+        }
+
+        function updateBP() {
+            var el = form.querySelector('input[name="Systolic_BP"]:checked');
+            document.getElementById("Diastolic_BP").value = el ? el.dataset.dbp : "";
+        }
+
+        function groups() {
+            var seen = {}, list = [];
+            form.querySelectorAll("[data-q]").forEach(function (q) {
+                if (q.closest("[data-cond].d-none")) return;
+                var name = q.dataset.q;
+                if (!seen[name]) { seen[name] = 1; list.push(q); }
+            });
+            return list;
+        }
+
+        function isAnswered(q) {
+            var name = q.dataset.q;
+            if (q.dataset.text) {
+                var el = form.querySelector('input[name="' + name + '"]');
+                return el.value !== "" && el.checkValidity();
+            }
+            return checkedValue(name) !== null;
+        }
+
+        function refresh() {
+            updateConditionals(); updateBMI(); updateBP();
+            var gs = groups(), done = gs.filter(isAnswered).length;
+            var pct = Math.round(100 * done / gs.length);
+            document.getElementById("progressText").textContent = done + " of " + gs.length + " answered";
+            document.getElementById("progressPct").textContent = pct + "%";
+            document.getElementById("progressBar").style.width = pct + "%";
+            var fd = new FormData(form), lines = [];
+            FEATURES.forEach(function (f) { lines.push(f + " = " + (fd.has(f) ? fd.get(f) : "")); });
+            document.getElementById("sentValues").textContent = lines.join("\n");
+        }
+
+        form.addEventListener("input", function (e) {
+            var q = e.target.closest("[data-q]"); if (q) q.classList.remove("missing");
+            refresh();
+        });
+        form.addEventListener("change", function (e) {
+            var q = e.target.closest("[data-q]"); if (q) q.classList.remove("missing");
+            refresh();
+        });
+
+        form.addEventListener("submit", function (e) {
+            refresh();
+            var bad = groups().filter(function (q) { return !isAnswered(q); });
+            bad.forEach(function (q) { q.classList.add("missing"); });
+            if (bad.length) {
+                e.preventDefault();
+                document.getElementById("formMsg").textContent = bad.length + " question(s) still need an answer.";
+                bad[0].scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+                document.getElementById("formMsg").textContent = "";
+            }
+        });
+
+        document.getElementById("resetBtn").addEventListener("click", function () {
+            form.reset();
+            form.querySelectorAll(".missing").forEach(function (q) { q.classList.remove("missing"); });
+            document.getElementById("formMsg").textContent = "";
+            refresh();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+        refresh();
+        var rb = document.getElementById("resultBox");
+        if (rb) rb.scrollIntoView({ block: "center" });
+    </script>
+    {% endraw %}
+</body>
+
+</html>
